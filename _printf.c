@@ -1,70 +1,47 @@
 #include "main.h"
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+
 /**
- * _printf - prints all types of variables
- * own version of built-in printf function
- * @format: list types of arguments
- * Return: number characters printed
+ * _printf - produces output according to a format
+ * @format: format string containing the characters and the specifiers
+ * Description: this function will call the get_print() function that will
+ * determine which printing function to call depending on the conversion
+ * specifiers contained into fmt
+ * Return: length of the formatted output string
  */
-void _printf(const char *format, ...)
+int _printf(const char *format, ...)
 {
-	int i, num_args = strlen(format), num_chars = 0;
+	int (*pfunc)(va_list, flags_t *);
+	const char *p;
+	va_list arguments;
+	flags_t flags = {0, 0, 0};
 
-	va_list args_list;
-	va_start(args_list, format);
-	putchar('0');
-	while (*format && format[i])
+	register int count = 0;
+
+	va_start(arguments, format);
+	if (!format || (format[0] == '%' && !format[1]))
+		return (-1);
+	if (format[0] == '%' && format[1] == ' ' && !format[2])
+		return (-1);
+	for (p = format; *p; p++)
 	{
-		if (format[i] == '%')
+		if (*p == '%')
 		{
-		putchar('1');
-			switch (format[i])
+			p++;
+			if (*p == '%')
 			{
-			case 'c':
-			{
-				char c = va_arg(args_list, int);
-				putchar(c);
-				num_chars++;
-				break;
+				count += _putchar('%');
+				continue;
 			}
-			case 's':
-			{
-				const char *s = va_arg(args_list, char *);
-				while (*s)
-					putchar(*s++);
-				num_chars++;
-				break;
-			}
-			case 'd':
-			{
-				double d = va_arg(args_list, int);
-				putchar(d);
-				num_chars++;
-				break;
-			}
-			case 'i':
-			{
-				putchar(va_arg(args_list, int));
-				num_chars++;
-				break;
-			}
-			}
-		}	
-		format++;
+			while (get_flag(*p, &flags))
+				p++;
+			pfunc = get_print(*p);
+			count += (pfunc)
+				? pfunc(arguments, &flags)
+				: _printf("%%%c", *p);
+		} else
+			count += _putchar(*p);
 	}
-//	return (num_chars);
-}
-
-int main()
-{
-//	void *ptr_to_main = (void*) main;
-	_printf("print a character: %c\n", 'H');
-	_printf("print a string: %s\n", "Hello World");
-	_printf("print an int: %c\n", 5);
-	_printf("print a neg int: %c\n", -5);
-
-	return (0);
+	_putchar(-1);
+	va_end(arguments);
+	return (count);
 }
